@@ -17,6 +17,9 @@ def background():
     draw.rect(screen, (255, 255, 0), (0, 282*2, 600*2, 120*2))
     draw.rect(screen, (0, 0, 255), (0, 202*2, 600*2, 80*2))
     draw.rect(screen, (209, 255, 255), (0, 0, 600*2, 202*2))
+    for i in range(10):
+        draw.ellipse(screen, (0,0,255), (-50+200*i, 404+160-40, 100, 80))
+        draw.ellipse(screen, (255,255,0), (49+200*i, 404+160-30, 101, 80))
 
 def cloud(y, x, s):
     d_cir(y, x, s)
