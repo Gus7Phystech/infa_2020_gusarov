@@ -12,6 +12,7 @@ WAIT_BALL = FPS*5
 screen = pygame.display.set_mode((CANVAS_WIDTH, CANVAS_HEIGHT))
 
 font = pygame.font.Font(None, 25)
+ball_font = pygame.font.Font(None, 50)
 
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
@@ -66,25 +67,27 @@ class BoomBall(object):
             n = randint(2, 5)
             tuple_new_balls = []
             for i in range(n):
-                tuple_new_balls.append(Ball(self.x, self.y))
+                coords = set_default_coordinates()
+                tuple_new_balls.append(Ball(self.x, self.y, coords[0]))
             return tuple_new_balls
         else:
             return False
 
     def draw(self):
         circle(screen, self.color, (self.x, self.y), self.r)
-        text_on_ball = font.render(str(self.seconds_to_explode), True, WHITE)
+        text_on_ball = ball_font.render(str(self.seconds_to_explode), True, WHITE)
         screen.blit(text_on_ball, [self.x, self.y])
 
 
-def get_default():
+def set_default_coordinates():
     default_r = randint(int(30 * CANVAS_WIDTH / 500), int(50 * CANVAS_WIDTH / 500))
     return (default_r,
             randint(default_r + 10, CANVAS_WIDTH - default_r - 1),
             randint(default_r + 10, CANVAS_HEIGHT - default_r - 1))
 
+
 class Ball(object):
-    def __init__(self, x=get_default()[1], y=get_default()[2], r=get_default()[0]):
+    def __init__(self, x, y, r):
         self.r = r
         self.x = x
         self.y = y
@@ -116,7 +119,7 @@ class Ball(object):
         circle(screen, self.color, (self.x, self.y), self.r)
 
 
-def dashboard_activity():
+def dashboard_activity(clock):
     done = False
     dat = []
     text_height = 15
@@ -131,12 +134,17 @@ def dashboard_activity():
             screen.blit(text_name, [5, text_height*i])
             screen.blit(text_score, [max([len(each) for each in data])*10, text_height*i])
             pygame.draw.line(screen, BLUE, (5, text_height*i), (CANVAS_WIDTH-5, text_height*i))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                done = True
+
         clock.tick(FPS)
         pygame.display.update()
         screen.fill(BLACK)
+    pygame.quit()
 
-def escape_activity(score):
-
+def escape_activity(clock, score):
     input_box = rect(screen, WHITE, (5, 40, 140, 32))
 
     color_inactive = pygame.Color('lightskyblue3')
@@ -150,6 +158,7 @@ def escape_activity(score):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
+                pygame.quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # If the user clicked on the input_box rect.
                 if input_box.collidepoint(event.pos):
@@ -190,7 +199,7 @@ def escape_activity(score):
         pygame.display.flip()
         clock.tick(FPS)
 
-    dashboard_activity()
+    dashboard_activity(clock)
 
 
 def check_click(event, balls):
@@ -201,53 +210,60 @@ def check_click(event, balls):
 
     return False
 
-
-# Start the game
-pygame.display.update()
-clock = pygame.time.Clock()
-finished = False
-
-N = randint(3, 6)
-
-balls = []
-for i in range(N):
-    balls.append(Ball())
-balls.append(BoomBall())
-counter = 0
-# text = font.render("SCORE: {}".format(counter), True, BLACK)
-already_waited = 0
-while not finished:
-    clock.tick(FPS)
-
-    text = font.render("SCORE: {}".format(counter), True, RED)
-    screen.blit(text, [5, 5])
-
-    already_waited += 1
-    if WAIT_BALL <= already_waited:
-        balls.append(Ball())
-        already_waited = 0
-
-    for ball in balls:
-        response = ball.go(pygame.time.get_ticks())
-        if response:
-            balls += response
-            balls.remove(ball)
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            finished = True
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            response = check_click(event, balls)
-            if response:# != False:
-                balls.remove(response)
-                counter += 1
-                if len(balls) == 0:
-                    finished = True
-
+def start_activity():
+    # Start the game
     pygame.display.update()
-    screen.fill(BLACK)
+    clock = pygame.time.Clock()
+    finished = False
 
-escape_activity(counter)
+    N = randint(3, 6)
+
+    balls = []
+    for i in range(N):
+        coords = set_default_coordinates()
+        balls.append(Ball(coords[1], coords[2], coords[0]))
+    balls.append(BoomBall())
+    counter = 0
+    # text = font.render("SCORE: {}".format(counter), True, BLACK)
+    already_waited = 0
 
 
-pygame.quit()
+
+    while not finished:
+        clock.tick(FPS)
+
+        text = font.render("SCORE: {}".format(counter), True, RED)
+        screen.blit(text, [5, 5])
+
+        already_waited += 1
+        if WAIT_BALL <= already_waited:
+            coords = set_default_coordinates()
+            balls.append(Ball(coords[1], coords[2], coords[0]))
+            already_waited = 0
+
+        for ball in balls:
+            response = ball.go(pygame.time.get_ticks())
+            if response:
+                balls += response
+                balls.remove(ball)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                finished = True
+                pygame.quit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                response = check_click(event, balls)
+                if response:# != False:
+                    balls.remove(response)
+                    counter += 1
+                    if len(balls) == 0:
+                        finished = True
+
+        pygame.display.update()
+        screen.fill(BLACK)
+
+    escape_activity(clock, counter)
+
+
+if __name__ == '__main__':
+    start_activity()
