@@ -1,5 +1,7 @@
 q 0
-q 0
-q 0
-qw 9
-qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq 0
+r 0
+r 0
+qwe 8
+qwe 6
+q 3
+qwertyutrurt 11

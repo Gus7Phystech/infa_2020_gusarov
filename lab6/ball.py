@@ -4,7 +4,8 @@ from random import randint
 pygame.init()
 
 CANVAS_WIDTH = 500
-CANVAS_HEIGHT = 500
+CANVAS_HEIGHT = CANVAS_WIDTH
+
 FPS = 30
 MAX_VEL = 7
 WAIT_BALL = FPS*5
@@ -22,31 +23,79 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 COLORS = [RED, BLUE, YELLOW, GREEN, MAGENTA, CYAN]
 
-class Running_Ball(object):
+
+class BoomBall(object):
     def __init__(self):
-        self.x = randint(51, 449)
-        self.y = randint(51, 449)
-        self.r = randint(30, 50)
+        self.r = randint(int(30*CANVAS_WIDTH/500), int(50*CANVAS_WIDTH/500))
+        self.x = randint(self.r+1, CANVAS_WIDTH - self.r - 1)
+        self.y = randint(self.r+1, CANVAS_HEIGHT - self.r - 1)
+        self.vx = randint(-MAX_VEL, MAX_VEL)
+        self.vy = randint(-MAX_VEL, MAX_VEL)
+        self.color = COLORS[5]
+
+        self.seconds_to_explode = randint(5, 14)
+        self.ticks_on_prev_second = 0
+
+    def go(self, amount_ticks):
+        response = self.explode(amount_ticks)
+        self.move()
+        self.draw()
+        return response
 
     def move(self):
-        self.vx = 1/(self.x - pygame.mouse.get_pos())
-        self.vy = 1/(self.y - pygame.mouse.get_pos())
+        if self.vx == 0:
+            self.vx = 1
+        if self.vy == 0:
+            self.vy = 1
 
         self.x += self.vx
         self.y += self.vy
+        if self.x + self.r >= CANVAS_WIDTH or self.x - self.r <= 0:
+            self.vx = -self.vx
+            self.vy = randint(-MAX_VEL, MAX_VEL)
+        if self.y + self.r >= CANVAS_HEIGHT or self.y - self.r <= 0:
+            self.vy = -self.vy
+            self.vx = randint(-MAX_VEL, MAX_VEL)
+
+    def explode(self, amount_ticks):
+        if amount_ticks - self.ticks_on_prev_second >= 1000:
+            self.seconds_to_explode -= 1
+            self.ticks_on_prev_second = amount_ticks
+
+        if self.seconds_to_explode <= 0:
+            n = randint(2, 5)
+            tuple_new_balls = []
+            for i in range(n):
+                tuple_new_balls.append(Ball(self.x, self.y))
+            return tuple_new_balls
+        else:
+            return False
 
     def draw(self):
         circle(screen, self.color, (self.x, self.y), self.r)
+        text_on_ball = font.render(str(self.seconds_to_explode), True, WHITE)
+        screen.blit(text_on_ball, [self.x, self.y])
 
+
+def get_default():
+    default_r = randint(int(30 * CANVAS_WIDTH / 500), int(50 * CANVAS_WIDTH / 500))
+    return (default_r,
+            randint(default_r + 10, CANVAS_WIDTH - default_r - 1),
+            randint(default_r + 10, CANVAS_HEIGHT - default_r - 1))
 
 class Ball(object):
-    def __init__(self):
-        self.x = randint(51, 449)
-        self.y = randint(51, 449)
-        self.r = randint(30, 50)
+    def __init__(self, x=get_default()[1], y=get_default()[2], r=get_default()[0]):
+        self.r = r
+        self.x = x
+        self.y = y
         self.vx = randint(-MAX_VEL, MAX_VEL)
         self.vy = randint(-MAX_VEL, MAX_VEL)
         self.color = COLORS[randint(0, 5)]
+
+    def go(self, amount_ticks):
+        self.move()
+        self.draw()
+        return False
 
     def move(self):
         if self.vx == 0:
@@ -70,18 +119,24 @@ class Ball(object):
 def dashboard_activity():
     done = False
     dat = []
-    text_height = 5
+    text_height = 15
     with open("scores.txt", "r") as f:
         data = f.readlines()
         f.close()
     print(data)
     while not done:
-        for i in range(len(data)):
-            text = font.render(data[i], True, BLUE)
-
-        screen.blit(text, [5, text_height])
+        for i in range(min(len(data), 10)):
+            text_name = font.render(data[i].split()[0], True, BLUE)
+            text_score = font.render(data[i].split()[1], True, BLUE)
+            screen.blit(text_name, [5, text_height*i])
+            screen.blit(text_score, [max([len(each) for each in data])*10, text_height*i])
+            pygame.draw.line(screen, BLUE, (5, text_height*i), (CANVAS_WIDTH-5, text_height*i))
+        clock.tick(FPS)
+        pygame.display.update()
+        screen.fill(BLACK)
 
 def escape_activity(score):
+
     input_box = rect(screen, WHITE, (5, 40, 140, 32))
 
     color_inactive = pygame.Color('lightskyblue3')
@@ -107,7 +162,7 @@ def escape_activity(score):
             if event.type == pygame.KEYDOWN:
                 if active:
                     if event.key == pygame.K_RETURN:
-                        f =  open('scores.txt', 'a')
+                        f = open('scores.txt', 'a')
                         f.write(text_in_input + " " + str(score) + "\n")
                         f.close()
                         print(text_in_input)
@@ -134,6 +189,7 @@ def escape_activity(score):
 
         pygame.display.flip()
         clock.tick(FPS)
+
     dashboard_activity()
 
 
@@ -145,41 +201,44 @@ def check_click(event, balls):
 
     return False
 
+
+# Start the game
 pygame.display.update()
 clock = pygame.time.Clock()
 finished = False
 
 N = randint(3, 6)
-running_ball = Ball()
+
 balls = []
 for i in range(N):
     balls.append(Ball())
+balls.append(BoomBall())
 counter = 0
-text = font.render("SCORE: {}".format(counter),True,BLACK)
+# text = font.render("SCORE: {}".format(counter), True, BLACK)
 already_waited = 0
 while not finished:
     clock.tick(FPS)
-    finished =True
-    already_waited += 1
+
     text = font.render("SCORE: {}".format(counter), True, RED)
     screen.blit(text, [5, 5])
+
+    already_waited += 1
     if WAIT_BALL <= already_waited:
         balls.append(Ball())
         already_waited = 0
 
-    '''running_ball.move()
-    running_ball.draw()'''
-
     for ball in balls:
-        ball.move()
-        ball.draw()
+        response = ball.go(pygame.time.get_ticks())
+        if response:
+            balls += response
+            balls.remove(ball)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             finished = True
         elif event.type == pygame.MOUSEBUTTONDOWN:
             response = check_click(event, balls)
-            if response != False:
+            if response:# != False:
                 balls.remove(response)
                 counter += 1
                 if len(balls) == 0:
