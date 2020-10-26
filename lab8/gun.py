@@ -215,7 +215,7 @@ def new_game(counter):
     canv.itemconfig(screen1, text='')
 
 
-counter = 0
+counter = -1 +1
 while True:
     new_game(counter)
     g1.bullet_counter = 0
