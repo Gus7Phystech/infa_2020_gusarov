@@ -210,6 +210,7 @@ def check_click(event, balls):
 
     return False
 
+
 def start_activity():
     # Start the game
     pygame.display.update()
