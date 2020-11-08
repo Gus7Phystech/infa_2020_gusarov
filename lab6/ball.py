@@ -129,8 +129,8 @@ def dashboard_activity(clock):
     print(data)
     while not done:
         for i in range(min(len(data), 10)):
-            text_name = font.render(data[i].split()[0], True, BLUE)
-            text_score = font.render(data[i].split()[1], True, BLUE)
+            text_name = font.render(data[len(data) - i - 1].split()[0], True, BLUE)
+            text_score = font.render(data[len(data) - i - 1].split()[1], True, BLUE)
             screen.blit(text_name, [5, text_height*i])
             screen.blit(text_score, [max([len(each) for each in data])*10, text_height*i])
             pygame.draw.line(screen, BLUE, (5, text_height*i), (CANVAS_WIDTH-5, text_height*i))
