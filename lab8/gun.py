@@ -1,4 +1,5 @@
-from random import randrange as rnd, choice
+from random import randrange as rnd, choice, random
+import random
 import tkinter as tk
 import math
 import time
@@ -171,18 +172,20 @@ class Target(object):
         self.x = -100
         self.y = -100
         self.alive = False
+
         targets.remove(self)
 
 
 
 screen1 = canv.create_text(400, 300, text='', font='28')
+screen2 = canv.create_text(20, 20, text='0', font='28')
 g1 = Gun()
 
 TIME_TO_SLEEP_FPS = 0.03
 
 
 def new_game(counter):
-    for i in range(1):
+    for i in range(random.randint(0, 5)):
         targets.append(Target())
         targets[-1].draw()
 
@@ -198,8 +201,10 @@ def new_game(counter):
 
                 if b.hit_test_with_obj(t) and t.alive:
                     t.hit()
-                    t.draw()
                     counter += 1
+                    canv.itemconfig(screen2, text='{}'.format(counter))
+                    t.draw()
+
                     if not targets:
                         canv.itemconfig(screen1, text='Вы уничтожили цели за ' + str(g1.bullet_counter) + ' выстрелов')
                         canv.bind('<Button-1>', '')
@@ -211,11 +216,15 @@ def new_game(counter):
         canv.update()
         time.sleep(TIME_TO_SLEEP_FPS)
 
+
     time.sleep(1)
     canv.itemconfig(screen1, text='')
+    return counter
 
 
-counter = -1 +1
+
+counter = 0
 while True:
-    new_game(counter)
+    c = new_game(counter)
+    counter += c
     g1.bullet_counter = 0
